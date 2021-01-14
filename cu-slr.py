@@ -1,123 +1,151 @@
-import math
+''' Pietro Agazzi
+Regressione Lineare Semplice
+'''
 
-# dev by pietro agazzi
+import numpy as np
+from math import sqrt
 
 class SimpleLinearRegression:
 
-    def __init__(self, x, y):
-        '''
-        il metodo di construtto
+    def fit(self, X, y):
+        ''' Addestramento dei dati.
 
         Parameters
         ----------
-        x : list or tuple
-            variabili caratteristiche x
-        y : list or tuple
-            variabili target y
-
-        Raises
-        ------
-        Exception
-            se il numero di valori di x e y non combaciano
+        X : array
+          features
+        y : array
+          target
         '''
-        self.x, self.y = x, y
-
-        # salvo nx
-        self.data_len = len(x)
+        self.angularity = self.__angularity(X, y)
+        self.intercepts = self.__intercepts(X, y, self.angularity)
         
-        # controllo il numero di dati nelle variabili
-        if len(x) != len(y):
-            raise Exception('non tractable dataset')
-    
-    def fit(self):
-        '''
-        calcolo della retta di regressione
-        '''
+    def score(self, x, y):
+        ''' Ottiene il coefficente di correlazione
 
-        # calcolo i valori medi
-        self.x_media = self.media(self.x)
-        self.y_media = self.media(self.y)
-
-        # calcolo delle serie
-        self.x_serie, self.y_serie, self.serie = self.series()
-
-        self.angular = self.angular_coefficient()
-        self.origin = self.origin()
-
-    def series(self):
-        '''
-        calcolo della serie x, y
+        Parameters
+        ----------
+        X : array
+          features
+        y : array
+          target
 
         Returns
         -------
-        float
-            serie (xi - mx) ** 2
-        flaot 
-            serie (yi - my) ** 2
-        flaot 
-            serie xi * yi
+        coefficent : float
         '''
+        return self.__coefficents(x, y)
 
-        x_serie = 0
-        y_serie = 0
-        serie = 0
-
-        for i in range(self.data_len):
-            x_serie += (self.x[i] - self.x_media) ** 2
-            y_serie += (self.y[i] - self.y_media) ** 2
-            serie += self.x[i] * self.y[i]
-        
-        return x_serie, y_serie, serie
-
-    def angular_coefficient(self):
-        '''
-        calcolo del coefficente angolare della retta di regressione
-        
-        Returns
-        -------
-        flaot
-            coeficente angolare della retta 
-        '''
-        return (self.serie - self.data_len * self.x_media * self.y_media) / self.x_serie
-        
-    def origin(self):
-        '''
-        calcolo dell'origine y0 della retta di regressione
-        
-        Returns
-        -------
-        flaot
-            y0 della retta
-        '''
-        return self.y_media - self.angular * self.x_media
-
-    def score(self):
-        '''
-        calcolo del coefficente di correlazione
-        
-        Returns
-        -------
-        flaot
-            coefficente di correlazione
-        '''
-        return (self.serie - self.data_len * self.x_media * self.y_media) / (math.sqrt(self.x_serie * self.y_serie)) 
-    
     def predict(self, x):
-        calc = lambda x : self.angular * x + self.origin
+        ''' Predici i target
+
+        Parameters
+        ----------
+        x : array
+          features
+
+        Returns
+        -------
+        target : array
+        '''
+        calc = lambda x : self.angularity * x + self.intercepts
         return [calc(i) for i in x]
 
-            
-    @staticmethod
-    def media(a):
+    def __intercepts(self, x, y, angularity):
+        ''' Calcolare l'intercetta
+        return self.__media(y) - intercepts * self.__media(x)
+
+        Parameters
+        ----------
+        x : array
+        y : array
+        angularity : float
+
+        Returns
+        -------
+        q : float
+        '''
+        return self.__media(y) - angularity * self.__media(x)
+        
+    def __dev(self, a):
+        ''' dev(a) -> Σ (a_i - am)^2
+
+        Parameters
+        ----------
+        a : array
+          features
+
+        Returns
+        -------
+        dev(x) : float
+        '''
+        a_m = self.__media(a)
+        return sum([(n - a_m) ** 2 for n in a])
+
+    def __codev(self, a, b):
+        ''' codev(a, b) -> Σ (a_i - am) (b_i - bm)
+
+        Parameters
+        ----------
+        a : array
+        b : array
+
+        Returns
+        -------
+        codev(a, b) : float
+        '''
+        a_m = self.__media(a)
+        b_m = self.__media(b)
+        return sum([(a[i] * b[i]) for i in range(len(a))])
+
+    def __angularity(self, x, y):
+        ''' Calcola il coefficente angolare
+        m = codev(x, y) - n xm ym / dev(x)
+
+        Parameters
+        ----------
+        x : array
+        y : array
+
+        Returns
+        -------
+        m : float
+        '''
+        return (self.__codev(x, y) - len(x) * self.__media(x) * self.__media(y)) / self.__dev(x)
+
+    def __coefficents(self, x, y):
+        ''' Calcolo il coefficente di correlazione
+        r = ( codev(x, y) - n xm ym ) / sqrt ( dev(x) * dev(y) )
+
+        Parameters
+        ----------
+        x : array
+        y : array
+
+        Returns
+        -------
+        coefficents : float
+        '''
+        return (self.__codev(x, y) - len(x) * self.__media(x) * self.__media(y)) / sqrt(self.__dev(x) * self.__dev(y))
+
+    def __media(self, a):
+        ''' Media
+
+        Parameters
+        ----------
+        a : array
+
+        Returns
+        -------
+        media : int
+        '''
         return sum(a) / len(a)
 
+model = SimpleLinearRegression()
 
-model = SimpleLinearRegression(
-    [5.4, 4.5, 3.4, 2.3, 1.8],
-    [1.0, 2.2, 3.9, 4.5, 5.1]
-)
-model.fit()
+x = [20, 24, 28, 30, 32, 36]
+y = [10, 12, 18, 24, 22, 20]
 
-print('coeficente di correlazione: %f' % model.score())
-print(model.predict([5]))
-
+model.fit(x, y)
+print('Coefficente di correlazione %f' % model.score(x, y))
+print(model.predict(x))
